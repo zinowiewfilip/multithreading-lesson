@@ -14,6 +14,11 @@ import java.util.concurrent.Executor;
 /**
  * 4.1 Włączenie @Async i własna pula wątków.
  * Bez własnej puli Spring Boot konfiguruje domyślny executor (wątki "task-N").
+ *
+ * Bean NIE nazywa się "taskExecutor": tę nazwę rezerwuje auto-konfiguracja Spring Boot
+ * (TaskExecutionAutoConfiguration), a nadpisywanie beanów jest domyślnie wyłączone,
+ * więc kolizja nazw kończy się błędem przy starcie. @Async trafia do naszej puli
+ * przez getAsyncExecutor() poniżej.
  */
 @Configuration
 @EnableAsync
@@ -21,8 +26,8 @@ public class AsyncConfig implements AsyncConfigurer {
 
     private static final Logger log = LoggerFactory.getLogger(AsyncConfig.class);
 
-    @Bean(name = "taskExecutor")
-    public ThreadPoolTaskExecutor taskExecutor() {
+    @Bean
+    public ThreadPoolTaskExecutor lessonAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);      // tyle wątków trzymamy stale
         executor.setMaxPoolSize(8);       // tyle maksymalnie, gdy kolejka jest pełna
@@ -34,7 +39,7 @@ public class AsyncConfig implements AsyncConfigurer {
 
     @Override
     public Executor getAsyncExecutor() {
-        return taskExecutor();
+        return lessonAsyncExecutor();
     }
 
     /** Wyjątki z metod @Async zwracających void inaczej znikają po cichu. */
